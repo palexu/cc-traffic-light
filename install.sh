@@ -52,8 +52,8 @@ cp "$SET" "$SET.cc-bak"
 SCRIPT="$HOME/.hammerspoon/cc-status.sh"
 jq --arg s "$SCRIPT" '
   .hooks = (.hooks // {})
-  | .hooks |= with_entries(.value |= map(select(((.hooks[0].command // "") | test("cc-status|open -a Hammerspoon")) | not)))
-  | .hooks.SessionStart     = ((.hooks.SessionStart // [])     + [{"hooks":[{"type":"command","command":"open -a Hammerspoon","timeout":5,"async":true}]}])
+  | .hooks |= with_entries(.value |= map(select(((.hooks[0].command // "") | test("cc-status|Hammerspoon")) | not)))
+  | .hooks.SessionStart     = ((.hooks.SessionStart // [])     + [{"hooks":[{"type":"command","command":"open -g -a Hammerspoon","timeout":5,"async":true}]}])
   | .hooks.UserPromptSubmit = ((.hooks.UserPromptSubmit // []) + [{"hooks":[{"type":"command","command":("bash "+$s+" red"),"timeout":3,"async":true}]}])
   | .hooks.Notification     = ((.hooks.Notification // [])     + [{"hooks":[{"type":"command","command":("bash "+$s+" yellow"),"timeout":3,"async":true}]}])
   | .hooks.Stop             = ((.hooks.Stop // [])             + [{"hooks":[{"type":"command","command":("bash "+$s+" green"),"timeout":3,"async":true}]}])
@@ -67,8 +67,8 @@ else
 fi
 
 # ---- [5/5] 启动 ----
-echo "==> [5/5] 启动 Hammerspoon"
-open -a Hammerspoon || true
+echo "==> [5/5] 启动 Hammerspoon（后台，不弹 Console）"
+open -g -a Hammerspoon || true
 
 cat <<'EOF'
 

@@ -306,8 +306,14 @@ screenWatcher = hs.screen.watcher.new(function()
 end)
 screenWatcher:start()
 
-require("hs.ipc")
+require("hs.ipc")   -- 仅供手动调试用 hs -c；日常状态走下面的 URL，不会触发 ipc 回调报错
+
+-- 用 hammerspoon:// URL 触发（替代 hs CLI，避免 ipc 回传报错弹 Console）
+hs.urlevent.bind("cc", function(_, params)
+  if params.st == "remove" then removeCC(params.sid)
+  else setCC(params.sid, params.st, params.title) end
+end)
 
 if hs.accessibilityState() then
-  hs.alert.show("🟢 CC 红绿灯 2.5（多屏边缘呼吸）")
+  hs.alert.show("🟢 CC 红绿灯 2.6（URL 触发 · 不再弹 Console）")
 end
