@@ -5,7 +5,8 @@
 
 local DOT, GAP, MARGIN = 34, 10, 18
 local LW, LH = 48, 18
-local EDGE_HOLD = 30
+local EDGE_HOLD = 30          -- 完成提醒（边缘呼吸+声音）持续秒数
+local REMIND_GAP = 6          -- 声音每隔几秒重响一次，直到确认
 local palette = {
   red    = { bright = {red=1.00, green=0.46, blue=0.42}, deep = {red=0.82, green=0.14, blue=0.16} },
   yellow = { bright = {red=1.00, green=0.86, blue=0.45}, deep = {red=0.92, green=0.62, blue=0.06} },
@@ -145,14 +146,22 @@ local function buildEdges()                      -- 每块屏幕建一层
   end
 end
 
+local soundTimer = nil
 local function startEdgeBreath()
   edgeUntil = os.time() + EDGE_HOLD
   edgeET = 0
   for _, c in ipairs(edgeCanvases) do c:show() end
+  playDone()                                            -- 立即响一声
+  if soundTimer then soundTimer:stop() end
+  soundTimer = hs.timer.doEvery(REMIND_GAP, function()  -- 之后每 REMIND_GAP 秒再响，直到取消/超时
+    if os.time() < edgeUntil then playDone()
+    else soundTimer:stop(); soundTimer = nil end
+  end)
 end
 
 local function stopEdgeBreath()
   edgeUntil = 0
+  if soundTimer then soundTimer:stop(); soundTimer = nil end
   for _, c in ipairs(edgeCanvases) do c:alpha(0); c:hide() end
 end
 
@@ -221,7 +230,7 @@ function setCC(sid, st, title)
   if st == "green" then
     pulse(sid)
     showBubble(sid, "✓ 完成  用时 " .. fmt(spans[sid] or 0), false)
-    playDone(); startEdgeBreath()
+    startEdgeBreath()   -- 含声音重复 + 边缘呼吸
   end
   return st
 end
@@ -315,5 +324,12 @@ hs.urlevent.bind("cc", function(_, params)
 end)
 
 if hs.accessibilityState() then
-  hs.alert.show("🟢 CC 红绿灯 2.6（URL 触发 · 不再弹 Console）")
+  hs.alert.show("🟢 CC 红绿灯 2.7（URL 触发 · 自动收起 Console）")
 end
+
+-- 防止 reload/启动时 Console 自动弹出：加载完成后立即收起
+-- （想看 Console 就从菜单栏 Hammerspoon 图标 → Console 手动打开）
+hs.timer.doAfter(0.4, function()
+  local w = hs.console.hswindow()
+  if w then w:close() end
+end)
